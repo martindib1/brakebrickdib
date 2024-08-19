@@ -1,46 +1,58 @@
-// URL to explain PHASER scene: https://rexrainbow.github.io/phaser3-rex-notes/docs/site/scene/
-
 export default class HelloWorldScene extends Phaser.Scene {
   constructor() {
-    // key of the scene
-    // the key will be used to start the scene by other scenes
     super("hello-world");
   }
 
-  init() {
-    // this is called before the scene is created
-    // init variables
-    // take data passed from other scenes
-    // data object param {}
-  }
+  init() {}
 
-  preload() {
-    // load assets
-    this.load.image("sky", "./assets/space3.png");
-    this.load.image("logo", "./assets/phaser3-logo.png");
-    this.load.image("red", "./assets/particles/red.png");
-  }
+  preload() {}
 
   create() {
-    // create game objects
-    this.add.image(400, 300, "sky");
+    // Crear pala como rectángulo
+    this.paddle = this.add.rectangle(400, 500, 100, 20, 0x6666ff);
+    this.physics.add.existing(this.paddle);
+    this.paddle.body.setImmovable(true);
+    this.paddle.body.setCollideWorldBounds(true);
 
-    const logo = this.physics.add.image(400, 100, "logo");
-    logo.setVelocity(100, 200);
-    logo.setBounce(1, 1);
-    logo.setCollideWorldBounds(true);
+    // Crear bola como círculo
+    this.ball = this.add.circle(400, 300, 10, 0xff6666);
+    this.physics.add.existing(this.ball);
+    this.ball.body.setCollideWorldBounds(true);
+    this.ball.body.setBounce(1, 1);
+    this.ball.body.setVelocity(200, 200);
 
-    // emmit particles from logo
-    const emitter = this.add.particles(0, 0, "red", {
-      speed: 100,
-      scale: { start: 1, end: 0 },
-      blendMode: "ADD",
+    // Crear obstáculo
+    this.obstacle = this.add.rectangle(400, 200, 100, 100, 0x66ff66);
+    this.physics.add.existing(this.obstacle);
+    this.obstacle.body.setImmovable(true);
+
+    // Configurar para que no sean afectados por la gravedad
+    this.paddle.body.setAllowGravity(false);
+    this.obstacle.body.setAllowGravity(false);
+
+    // Agregar colisiones
+    this.physics.add.collider(this.paddle, this.ball, null, null, this);
+    this.physics.add.collider(this.obstacle, this.ball, this.handleCollision, null, this);
+
+    // Detectar colisión con el límite inferior del mundo
+    this.physics.world.on("worldbounds", (body, up, down, left, right) => {
+      if (down) {
+        console.log("hit bottom");
+        this.scene.start("GameOver");
+      }
     });
 
-    emitter.startFollow(logo);
+    // Moverse con el mouse
+    this.input.on('pointermove', (pointer) => {
+      this.paddle.x = Phaser.Math.Clamp(pointer.x, this.paddle.width / 2, this.scale.width - this.paddle.width / 2);
+    });
   }
 
   update() {
-    // update game objects
+  }
+
+  handleCollision(obstacle, ball) {
+    console.log("collision");
+    obstacle.destroy();
   }
 }
